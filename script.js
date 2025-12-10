@@ -5,6 +5,9 @@ const canvas = canvasElem.getContext("2d");
 // Variables
 const scale = 50; // 18 * 50 = 900px
 const speed = 100; // ms delay between frames
+let score = 0;
+let highScore = 0;
+let pixels = [];
 
 // Functions
 function gameLoop() {}
@@ -19,9 +22,8 @@ function setupCanvas() {
 }
 
 function drawPixel(x, y, width = 1, height = 1, colour = "black") {
-	canvas.fillStyle = colour;
-	canvas.fillRect((x - 1) * scale, (y - 1) * scale, width * scale, height * scale);
-	canvas.fillStyle = "black";
+	let pixel = new Pixel(x, y, width, height, colour);
+	pixel.drawSquare();
 }
 
 function drawBoardStatics(borderColour = "black", playColour = "grey", scoreColour = "white") {
@@ -31,24 +33,73 @@ function drawBoardStatics(borderColour = "black", playColour = "grey", scoreColo
 	drawPixel(13, 2, 5, 1, scoreColour);
 }
 
+// Classes
+class Pixel {
+	constructor(x, y, width = 1, height = 1, colour = "black") {
+		this.x = x;
+		this.y = y;
+		this.width = width;
+		this.height = height;
+		this.colour = colour;
+
+		pixels.push(this);
+	}
+
+	drawSquare = function () {
+		canvas.fillStyle = this.colour;
+		canvas.fillRect((this.x - 1) * scale, (this.y - 1) * scale, this.width * scale, this.height * scale);
+	};
+}
+
+class Snake {
+	constructor() {
+		this.segments = [new Pixel(7, 5, 1, 1, "green"), new Pixel(6, 5, 1, 1, "green"), new Pixel(5, 5, 1, 1, "green")];
+		this.direction = "right";
+		this.nextDirection = "right";
+
+		console.log("created");
+	}
+
+	drawSnake = function () {
+		console.log("drawing");
+
+		this.segments.forEach((segment) => {
+			segment.drawSquare();
+		});
+	};
+}
+
+const player = new Snake();
+
+class Apple {
+	constructor(x, y) {
+		this.x = x;
+		this.y = y;
+	}
+}
+
 // Game Loop
 setInterval(() => {
 	// Clear canvas
-	canvas.clearRect(1, 18);
+	canvas.clearRect(0, 0, canvasElem.width, canvasElem.height);
+	pixels = [];
 
-	// Draw curerent score on the screen
+	// Draw current score on the screen
 	// Move snake in current direction
 	// Collisions
 	// Apple
-	// Draw segments
-	// Draw apple
 	// Draw border
+	drawBoardStatics("darkslategrey", "greenyellow", "darkseagreen");
+
+	// Draw segments
+	player.drawSnake();
+
+	// Draw apple
 }, speed);
 
 // Event Listeners
 window.onload = function () {
 	setupCanvas();
-	drawBoardStatics("darkslategrey", "greenyellow", "darkseagreen");
 };
 
 // Player Inputs
@@ -66,3 +117,4 @@ window.onload = function () {
 
 //todo		Additional
 //todo		 - Speed increases during play
+//todo		 - Add highscore that updates during play
