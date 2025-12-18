@@ -103,7 +103,8 @@ class Snake {
 			new Pixel(7, 5, 1, 1, "green", "snake", false), // head
 			new Pixel(6, 5, 1, 1, "green", "snake", false),
 			new Pixel(5, 5, 1, 1, "green", "snake", false),
-			new Pixel(4, 5, 1, 1, "green", "snake", false), // tail
+			new Pixel(4, 5, 1, 1, "green", "snake", false),
+			new Pixel(3, 5, 1, 1, "green", "snake", false), // tail
 		];
 		this.direction = "right";
 		this.nextDirection = "right";
@@ -152,6 +153,13 @@ class Snake {
 		// Finding head location
 		let headX = this.segments[0].x;
 		let headY = this.segments[0].y;
+
+		// Checking self collision
+		for (let i = this.segments.length - 1; i > 0; i--) {
+			if (this.segments[i].x == headX && this.segments[i].y == headY) {
+				alert("lose");
+			}
+		}
 
 		// Determining contact pixel
 		let contactPixel = findPixel(headX, headY);
