@@ -231,6 +231,7 @@ const player = new Snake();
 
 let apple = new Apple(getRandomNumber(2, 17), getRandomNumber(4, 17));
 
+// Game Loop
 setInterval(() => {
 	// Clear canvas
 	canvas.clearRect(0, 0, canvasElem.width, canvasElem.height);
