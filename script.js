@@ -18,6 +18,17 @@ if (localStorage.snakeHighscore) {
 let removeTail = true;
 let pixels = [];
 
+// Game state variables
+const gameStates = {
+	loading: "loading",
+	title: "title",
+	play: "play",
+	lose: "lose",
+};
+let currentGameState = gameStates.loading;
+
+let loadingProgress = 0;
+
 // Functions
 function setupCanvas() {
 	canvasElem.width = 18 * scale;
@@ -48,11 +59,11 @@ function drawPixel(x, y, width = 1, height = 1, colour = "black", type = "wall",
 	return created;
 }
 
-function drawText(startX, y, content) {
+function drawText(startX, y, content, colour = "black") {
 	let text = content.split("");
 
 	for (let i = 0; i < text.length; i++) {
-		const pixel = new Pixel(startX + i, y);
+		const pixel = new Pixel(startX + i, y, 1, 1, colour);
 		pixel.drawText(text[i]);
 	}
 }
@@ -66,8 +77,8 @@ function drawBoardStatics(borderColour = "black", playColour = "grey", scoreColo
 	drawPixel(2, 2, 5, 1, scoreColour, "wall");
 	drawPixel(13, 2, 5, 1, scoreColour, "wall");
 
-	drawText(2, 2, `S=${padValue(score, 3)}`);
-	drawText(13, 2, `H=${padValue(highscore, 3)}`);
+	drawText(2, 2, `S=${padValue(score, 3)}`, "black");
+	drawText(13, 2, `H=${padValue(highscore, 3)}`, "black");
 }
 
 function padValue(value, padAmount = 3) {
@@ -109,6 +120,34 @@ function getRandomNumber(min, max) {
 	return Math.floor(Math.random() * (max - min) + min);
 }
 
+function drawLoadingScreen() {
+	// Background
+	drawPixel(2, 4, 16, 14, "black", "board");
+
+	// Title
+	drawText(8, 6, "SNAKE", "white");
+
+	// Loading bar outline
+	drawPixel(5, 11, 10, 1, "darkslategrey", "wall");
+
+	// Loading bar fill
+	const filled = Math.floor((loadingProgress / 100) * 10);
+	if (filled > 0) {
+		drawPixel(5, 11, filled, 1, "greenyellow", "wall");
+	}
+
+	// Loading text
+	drawText(5, 12, `LOADING`);
+}
+
+function drawTitleScreen() {
+	drawPixel(2, 4, 16, 14, "black", "board");
+
+	drawText(8, 6, "SNAKE", "white");
+
+	drawText(5, 11, "PRESS START", "white");
+}
+
 // Classes
 class Pixel {
 	constructor(x, y, width = 1, height = 1, colour = "black", type = "wall", addToPixels = true) {
@@ -132,7 +171,7 @@ class Pixel {
 	drawText = function (content) {
 		canvas.textBaseline = "top";
 		canvas.textAlign = "left";
-		canvas.fillStyle = "black";
+		canvas.fillStyle = this.colour;
 		canvas.font = `${scale}px Trebuchet MS`;
 
 		canvas.fillText(content, (this.x - 1) * scale, (this.y - 1) * scale);
@@ -275,21 +314,44 @@ const player = new Snake();
 
 let apple = new Apple(getRandomNumber(2, 17), getRandomNumber(4, 17));
 
-// Game Loop
-setInterval(() => {
-	// Clear canvas
+// Intervals
+const loadingInterval = setInterval(() => {
 	canvas.clearRect(0, 0, canvasElem.width, canvasElem.height);
 	pixels = [];
 
-	// Draw border
-	drawBoardStatics("darkslategrey", "greenyellow", "darkseagreen");
+	drawBoardStatics("darkslategrey", "black", "darkseagreen");
 
-	// Draw apple
-	apple.draw();
+	loadingProgress += getRandomNumber(5, 15);
 
-	// Move snake
-	player.move(removeTail);
-	player.draw();
+	if (loadingProgress >= 100) {
+		loadingProgress = 100;
+		clearInterval(loadingInterval);
+		currentGameState = gameStates.title;
+	}
+
+	drawLoadingScreen();
+}, 120);
+
+setInterval(() => {
+	// Title screen game state
+	if (currentGameState === gameStates.title) {
+		drawTitleScreen();
+		return;
+	}
+
+	// Playing game state
+	if (currentGameState === gameStates.play) {
+		// Clear canvas
+		canvas.clearRect(0, 0, canvasElem.width, canvasElem.height);
+		pixels = [];
+
+		// Draw border
+		drawBoardStatics("darkslategrey", "greenyellow", "darkseagreen");
+
+		apple.draw();
+		player.move(removeTail);
+		player.draw();
+	}
 }, speed);
 
 // Event Listeners
@@ -310,6 +372,12 @@ const directions = {
 };
 
 body.addEventListener("keydown", function (e) {
+	// Press start
+	if (currentGameState === gameStates.title) {
+		currentGameState = gameStates.play;
+		return;
+	}
+
 	if (directions[e.keyCode] != undefined) {
 		player.nextDirection = directions[e.keyCode];
 	}
@@ -324,7 +392,7 @@ body.addEventListener("keydown", function (e) {
 //todo//		 	- Pick random unocupied apple position
 //todo//		 	- Detect snake eating
 //todo//		 - Track score
-//todo		 - Locally store highscore
+//todo//		 - Locally store highscore
 //todo		 - Add art
 //todo		 	- Lose screen
 //todo		 	- Win screen

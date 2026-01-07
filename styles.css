@@ -1,6 +1,101 @@
+/* =========================
+   Early 2000s Snake Styles
+   ========================= */
+
+/* Reset */
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+html,
+body {
+	height: 100%;
+	overflow: hidden;
+}
+
+/* Page background */
+body {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	/* Classic dark gradient background */
+	background: radial-gradient(circle at top, #2f4f4f 0%, #0b1a1a 70%);
+	font-family: "Trebuchet MS", Tahoma, Verdana, Arial, sans-serif;
+
+	/* Slight CRT softness */
+	color: #dff5df;
+}
+
+/* Canvas styling */
 #canvas {
-	/* width: 900px;
-	height: 900px; */
-	text-align: center;
-	border: black solid 1px;
+	/* Chunky early-2000s frame */
+	border: 6px solid #1e3d3d;
+	outline: 2px solid #8fbfbf;
+
+	background-color: #9acd32; /* fallback if canvas clears */
+	box-shadow: inset 0 0 0 2px #3b5f3b, 0 0 25px rgba(0, 0, 0, 0.7);
+
+	/* Keep pixels crisp */
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+
+	/* Slight bevel illusion */
+	border-radius: 4px;
+}
+
+/* Retro focus ring */
+#canvas:focus {
+	outline: 2px dotted #b0ffb0;
+	outline-offset: 4px;
+}
+
+/* scanline effect*/
+body::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+
+	background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35) 2px, transparent 2px, transparent 5px);
+
+	z-index: 10;
+	mix-blend-mode: overlay;
+}
+
+#canvas {
+	position: relative;
+	z-index: 1;
+
+	filter: saturate(1.25) contrast(1.25) brightness(0.9);
+}
+
+#canvas::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+
+	background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12) 2px, transparent 2px, transparent 5px);
+
+	mix-blend-mode: overlay;
+	z-index: 20;
+}
+
+@keyframes crt-flicker {
+	0% {
+		opacity: 0.85;
+	}
+	50% {
+		opacity: 0.9;
+	}
+	100% {
+		opacity: 0.85;
+	}
+}
+
+body::before {
+	animation: crt-flicker 0.12s infinite;
 }
