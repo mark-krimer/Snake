@@ -8,7 +8,13 @@ const body = document.querySelector("body");
 const scale = 50; // 18 * 50 = 900px
 const speed = 100; // ms delay between frames
 let score = 0;
-let highScore = 0;
+let highscore;
+if (localStorage.snakeHighscore) {
+	highscore = localStorage.snakeHighscore;
+} else {
+	highscore = 0;
+}
+
 let removeTail = true;
 let pixels = [];
 
@@ -42,6 +48,15 @@ function drawPixel(x, y, width = 1, height = 1, colour = "black", type = "wall",
 	return created;
 }
 
+function drawText(startX, y, content) {
+	let text = content.split("");
+
+	for (let i = 0; i < text.length; i++) {
+		const pixel = new Pixel(startX + i, y);
+		pixel.drawText(text[i]);
+	}
+}
+
 function drawBoardStatics(borderColour = "black", playColour = "grey", scoreColour = "white") {
 	drawPixel(1, 1, 18, 3, borderColour, "wall");
 	drawPixel(1, 4, 1, 15, borderColour, "wall");
@@ -50,6 +65,19 @@ function drawBoardStatics(borderColour = "black", playColour = "grey", scoreColo
 	drawPixel(2, 4, 16, 14, playColour, "board");
 	drawPixel(2, 2, 5, 1, scoreColour, "wall");
 	drawPixel(13, 2, 5, 1, scoreColour, "wall");
+
+	drawText(2, 2, `S=${padValue(score, 3)}`);
+	drawText(13, 2, `H=${padValue(highscore, 3)}`);
+}
+
+function padValue(value, padAmount = 3) {
+	let paddedValue = String(value).split("");
+
+	while (paddedValue.length < padAmount) {
+		paddedValue.unshift("0");
+	}
+
+	return paddedValue.join("");
 }
 
 function checkMovementCompatibility(direction, nextDirection) {
@@ -100,6 +128,15 @@ class Pixel {
 		canvas.fillStyle = this.colour;
 		canvas.fillRect((this.x - 1) * scale, (this.y - 1) * scale, this.width * scale, this.height * scale);
 	};
+
+	drawText = function (content) {
+		canvas.textBaseline = "top";
+		canvas.textAlign = "left";
+		canvas.fillStyle = "black";
+		canvas.font = `${scale}px Trebuchet MS`;
+
+		canvas.fillText(content, (this.x - 1) * scale, (this.y - 1) * scale);
+	};
 }
 
 class Snake {
@@ -107,9 +144,7 @@ class Snake {
 		this.segments = [
 			new Pixel(7, 5, 1, 1, "green", "snake", false), // head
 			new Pixel(6, 5, 1, 1, "green", "snake", false),
-			new Pixel(5, 5, 1, 1, "green", "snake", false),
-			new Pixel(4, 5, 1, 1, "green", "snake", false),
-			new Pixel(3, 5, 1, 1, "green", "snake", false), // tail
+			new Pixel(5, 5, 1, 1, "green", "snake", false), // tail
 		];
 		this.direction = "right";
 		this.nextDirection = "right";
@@ -203,6 +238,7 @@ class Apple {
 		let valid = false;
 		let spawnX, spawnY;
 
+		// Invalid Apple spawn
 		while (!valid) {
 			spawnX = getRandomNumber(2, 17);
 			spawnY = getRandomNumber(4, 17);
@@ -219,9 +255,17 @@ class Apple {
 			}
 		}
 
+		// Spawning new Apple
 		console.log("Successfully spawned");
 		apple = null;
 		apple = new Apple(spawnX, spawnY);
+
+		// Update score
+		score++;
+		if (score > highscore) {
+			highscore = score;
+			localStorage.snakeHighscore = highscore;
+		}
 		return;
 	};
 }
@@ -239,8 +283,6 @@ setInterval(() => {
 
 	// Draw border
 	drawBoardStatics("darkslategrey", "greenyellow", "darkseagreen");
-
-	// Draw current score on the screen
 
 	// Draw apple
 	apple.draw();
@@ -281,7 +323,8 @@ body.addEventListener("keydown", function (e) {
 //todo//		 - Apple eating
 //todo//		 	- Pick random unocupied apple position
 //todo//		 	- Detect snake eating
-//todo		 - Track score
+//todo//		 - Track score
+//todo		 - Locally store highscore
 //todo		 - Add art
 //todo		 	- Lose screen
 //todo		 	- Win screen
@@ -292,3 +335,8 @@ body.addEventListener("keydown", function (e) {
 //todo		Additional
 //todo		 - Speed increases during play
 //todo		 - Add highscore that updates during play
+
+//* Drawing pixel
+// const pixel = new Pixel(posx, posy, 1, 1, colour, type);
+// 			pixel.drawSquare();
+// 			created.push(pixel);
