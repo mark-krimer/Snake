@@ -1,12 +1,15 @@
 // Importing HTML Elements
 const canvasElem = document.getElementById("canvas");
 const canvas = canvasElem.getContext("2d");
+const popup = document.getElementById("popup");
+const popupMessage = document.getElementById("popupMessage");
 
 const body = document.querySelector("body");
 
 // Variables
 const scale = 50; // 18 * 50 = 900px
-const speed = 100; // ms delay between frames
+const speed = 125; // ms delay between frames
+const winCondition = 324; // 18 * 18 (board size)
 let score = 0;
 let highscore;
 if (localStorage.snakeHighscore) {
@@ -14,9 +17,13 @@ if (localStorage.snakeHighscore) {
 } else {
 	highscore = 0;
 }
+const beep = new Audio("assets/error.mp3");
 
+let playSound = true;
 let removeTail = true;
 let pixels = [];
+let loseMessage;
+let inputBuffer = [];
 
 // Game state variables
 const gameStates = {
@@ -24,6 +31,7 @@ const gameStates = {
 	title: "title",
 	play: "play",
 	lose: "lose",
+	win: "win",
 };
 let currentGameState = gameStates.loading;
 
@@ -93,16 +101,16 @@ function padValue(value, padAmount = 3) {
 
 function checkMovementCompatibility(direction, nextDirection) {
 	if (direction == "right" && nextDirection == "left") {
-		return 1;
+		return true;
 	}
 	if (direction == "left" && nextDirection == "right") {
-		return 1;
+		return true;
 	}
 	if (direction == "up" && nextDirection == "down") {
-		return 1;
+		return true;
 	}
 	if (direction == "down" && nextDirection == "up") {
-		return 1;
+		return true;
 	}
 }
 
@@ -146,6 +154,32 @@ function drawTitleScreen() {
 	drawText(8, 6, "SNAKE", "white");
 
 	drawText(5, 11, "PRESS START", "white");
+}
+
+function reset() {
+	player.segments = [
+		new Pixel(7, 5, 1, 1, "green", "snake", false), // head
+		new Pixel(6, 5, 1, 1, "green", "snake", false),
+		new Pixel(5, 5, 1, 1, "green", "snake", false), // tail
+	];
+	player.direction = "right";
+	player.nextDirection = "right";
+
+	apple.spawnNew();
+
+	score = 0;
+	playSound = true;
+	inputBuffer = [];
+}
+
+function showPopup() {
+	popupMessage.innerHTML = loseMessage;
+	popup.hidden = false;
+}
+
+function hidePopup() {
+	popup.hidden = true;
+	currentGameState = gameStates.title;
 }
 
 // Classes
@@ -200,15 +234,30 @@ class Snake {
 		let newHeadY = this.segments[0].y;
 
 		// Setting direction
-		if (checkMovementCompatibility(this.direction, this.nextDirection) == 1) {
-			this.nextDirection = this.direction;
+		if (inputBuffer.length > 0) {
+			const proposed = inputBuffer.shift();
+
+			// Reject reverse moves here
+			console.log(this.direction, proposed);
+
+			if (!checkMovementCompatibility(this.direction, proposed)) {
+				this.nextDirection = proposed;
+			}
 		}
 
 		this.direction = this.nextDirection;
 
+		// Check collision
+		this.checkCollisions();
+
 		// Remove tail
 		if (!removeTailFunc) {
 			removeTail = true;
+
+			// Checking win condition
+			if (this.segments.length + 1 == winCondition) {
+				currentGameState = gameStates.win;
+			}
 		} else {
 			this.segments.splice(-1, 1);
 		}
@@ -225,20 +274,28 @@ class Snake {
 		}
 
 		this.segments.splice(0, 0, new Pixel(newHeadX, newHeadY, 1, 1, "green", "snake"));
-
-		// Check collision
-		this.checkCollisions();
 	};
 
 	checkCollisions = function () {
-		// Finding head location
+		// Predict next head position
 		let headX = this.segments[0].x;
 		let headY = this.segments[0].y;
+
+		if (this.direction === "right") {
+			headX++;
+		} else if (this.direction === "left") {
+			headX--;
+		} else if (this.direction === "down") {
+			headY++;
+		} else if (this.direction === "up") {
+			headY--;
+		}
 
 		// Checking self collision
 		for (let i = this.segments.length - 1; i > 0; i--) {
 			if (this.segments[i].x == headX && this.segments[i].y == headY) {
-				alert("lose");
+				currentGameState = gameStates.lose;
+				loseMessage = "You hit yourself!";
 			}
 		}
 
@@ -251,7 +308,8 @@ class Snake {
 
 		// Wall
 		if (contactPixel.type == "wall") {
-			alert("lose");
+			currentGameState = gameStates.lose;
+			loseMessage = "You hit the wall!";
 		}
 
 		// Apple
@@ -315,6 +373,7 @@ const player = new Snake();
 let apple = new Apple(getRandomNumber(2, 17), getRandomNumber(4, 17));
 
 // Intervals
+// Loading
 const loadingInterval = setInterval(() => {
 	canvas.clearRect(0, 0, canvasElem.width, canvasElem.height);
 	pixels = [];
@@ -332,15 +391,23 @@ const loadingInterval = setInterval(() => {
 	drawLoadingScreen();
 }, 120);
 
+// Main Gameloop
 setInterval(() => {
 	// Title screen game state
 	if (currentGameState === gameStates.title) {
 		drawTitleScreen();
+		reset();
 		return;
 	}
 
 	// Playing game state
 	if (currentGameState === gameStates.play) {
+		player.move(removeTail);
+
+		if (currentGameState === gameStates.lose || currentGameState === gameStates.win) {
+			return;
+		}
+
 		// Clear canvas
 		canvas.clearRect(0, 0, canvasElem.width, canvasElem.height);
 		pixels = [];
@@ -349,8 +416,20 @@ setInterval(() => {
 		drawBoardStatics("darkslategrey", "greenyellow", "darkseagreen");
 
 		apple.draw();
-		player.move(removeTail);
 		player.draw();
+	}
+
+	if (currentGameState === gameStates.lose) {
+		if (playSound == true) {
+			beep.play();
+			playSound = false;
+		}
+		showPopup();
+	}
+
+	if (currentGameState === gameStates.win) {
+		loseMessage = "You Won!!";
+		showPopup();
 	}
 }, speed);
 
@@ -358,6 +437,9 @@ setInterval(() => {
 window.onload = function () {
 	setupCanvas();
 };
+
+document.getElementById("popupOk").onclick = hidePopup;
+document.getElementById("popupClose").onclick = hidePopup;
 
 // Player Inputs
 const directions = {
@@ -378,8 +460,15 @@ body.addEventListener("keydown", function (e) {
 		return;
 	}
 
-	if (directions[e.keyCode] != undefined) {
-		player.nextDirection = directions[e.keyCode];
+	if (currentGameState !== gameStates.play) return;
+
+	// Input buffer
+	const dir = directions[e.keyCode];
+	if (!dir) return;
+
+	// Prevent duplicates flooding the queue
+	if (inputBuffer[inputBuffer.length - 1] !== dir) {
+		inputBuffer.push(dir);
 	}
 });
 
@@ -394,7 +483,7 @@ body.addEventListener("keydown", function (e) {
 //todo//		 - Track score
 //todo//		 - Locally store highscore
 //todo		 - Add art
-//todo		 	- Lose screen
+//todo//		 	- Lose screen
 //todo		 	- Win screen
 //todo		 	- Snake art
 //todo		 	- Apple art
@@ -403,8 +492,3 @@ body.addEventListener("keydown", function (e) {
 //todo		Additional
 //todo		 - Speed increases during play
 //todo		 - Add highscore that updates during play
-
-//* Drawing pixel
-// const pixel = new Pixel(posx, posy, 1, 1, colour, type);
-// 			pixel.drawSquare();
-// 			created.push(pixel);
