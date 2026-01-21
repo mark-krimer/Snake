@@ -11,9 +11,10 @@ const beep = new Audio("assets/error.mp3");
 const chomp = new Audio("assets/chomp.wav");
 
 // Variables
-const scale = 50; // 18 * 50 = 900px
+const tiles = 18;
+let scale = tiles * 50; // tiles * 50 = 900px
 const speed = 125; // ms delay between frames
-const winCondition = 324; // 18 * 18 (board size)
+const winCondition = tiles * tiles; // tiles * tiles (board size)\
 let score = 0;
 let highscore;
 if (localStorage.snakeHighscore) {
@@ -42,8 +43,10 @@ let loadingProgress = 0;
 
 // Functions
 function setupCanvas() {
-	canvasElem.width = 18 * scale;
-	canvasElem.height = 18 * scale;
+	calculateScale();
+
+	canvasElem.width = tiles * scale;
+	canvasElem.height = tiles * scale;
 
 	// Disable anti-aliasing
 	canvas.imageSmoothingEnabled = false;
@@ -80,10 +83,10 @@ function drawText(startX, y, content, colour = "black") {
 }
 
 function drawBoardStatics(borderColour = "black", playColour = "grey", scoreColour = "white") {
-	drawPixel(1, 1, 18, 3, borderColour, "wall");
+	drawPixel(1, 1, tiles, 3, borderColour, "wall");
 	drawPixel(1, 4, 1, 15, borderColour, "wall");
-	drawPixel(18, 4, 1, 15, borderColour, "wall");
-	drawPixel(2, 18, 16, 1, borderColour, "wall");
+	drawPixel(tiles, 4, 1, 15, borderColour, "wall");
+	drawPixel(2, tiles, 16, 1, borderColour, "wall");
 	drawPixel(2, 4, 16, 14, playColour, "board");
 	drawPixel(2, 2, 5, 1, scoreColour, "wall");
 	drawPixel(13, 2, 5, 1, scoreColour, "wall");
@@ -149,6 +152,18 @@ function drawLoadingScreen() {
 
 	// Loading text
 	drawText(5, 12, `LOADING`);
+}
+
+function calculateScale() {
+	const padding = 32;
+	const usableWidth = window.innerWidth - padding;
+	const usableHeight = window.innerHeight - padding;
+
+	const maxScaleX = Math.floor(usableWidth / tiles);
+	const maxScaleY = Math.floor(usableHeight / tiles);
+
+	// Use the smaller one to keep it square
+	scale = Math.max(10, Math.min(maxScaleX, maxScaleY));
 }
 
 function drawTitleScreen() {
