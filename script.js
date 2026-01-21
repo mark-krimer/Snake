@@ -6,6 +6,10 @@ const popupMessage = document.getElementById("popupMessage");
 
 const body = document.querySelector("body");
 
+// Sound Effects
+const beep = new Audio("assets/error.mp3");
+const chomp = new Audio("assets/chomp.wav");
+
 // Variables
 const scale = 50; // 18 * 50 = 900px
 const speed = 125; // ms delay between frames
@@ -17,7 +21,6 @@ if (localStorage.snakeHighscore) {
 } else {
 	highscore = 0;
 }
-const beep = new Audio("assets/error.mp3");
 
 let playSound = true;
 let removeTail = true;
@@ -215,7 +218,7 @@ class Pixel {
 class Snake {
 	constructor() {
 		this.segments = [
-			new Pixel(7, 5, 1, 1, "green", "snake", false), // head
+			new Pixel(7, 5, 1, 1, "#148527", "snake", false), // head
 			new Pixel(6, 5, 1, 1, "green", "snake", false),
 			new Pixel(5, 5, 1, 1, "green", "snake", false), // tail
 		];
@@ -273,7 +276,8 @@ class Snake {
 			newHeadY--;
 		}
 
-		this.segments.splice(0, 0, new Pixel(newHeadX, newHeadY, 1, 1, "green", "snake"));
+		console.log((this.segments[0].colour = "green"));
+		this.segments.splice(0, 0, new Pixel(newHeadX, newHeadY, 1, 1, "#0a9740ff", "snake"));
 	};
 
 	checkCollisions = function () {
@@ -354,6 +358,9 @@ class Apple {
 
 		// Spawning new Apple
 		console.log("Successfully spawned");
+		if (currentGameState === gameStates.play) {
+			chomp.play();
+		}
 		apple = null;
 		apple = new Apple(spawnX, spawnY);
 
@@ -471,24 +478,3 @@ body.addEventListener("keydown", function (e) {
 		inputBuffer.push(dir);
 	}
 });
-
-//todo		Fundementals
-//todo//		 - Get snake moving
-//todo//		 - Collisions (wall, self)
-//todo//		 	- Track snake segment positions
-//todo//		 	- Detect head position overlap
-//todo//		 - Apple eating
-//todo//		 	- Pick random unocupied apple position
-//todo//		 	- Detect snake eating
-//todo//		 - Track score
-//todo//		 - Locally store highscore
-//todo		 - Add art
-//todo//		 	- Lose screen
-//todo		 	- Win screen
-//todo		 	- Snake art
-//todo		 	- Apple art
-//todo		 - Fix game eating inputs
-
-//todo		Additional
-//todo		 - Speed increases during play
-//todo		 - Add highscore that updates during play
